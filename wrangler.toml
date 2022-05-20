@@ -1,0 +1,29 @@
+name = "tic-tac-toe-readme"
+# type = "javascript"
+type = "rust"
+workers_dev = true
+compatibility_date = "2022-01-20"
+account_id = "9fd23e0479c1b7592bd1fc42c4b34a95"
+kv_namespaces = [
+   { binding = "TICTAC", id = "70c74dec9e694b91844df7b98a130c4c", preview_id = "ea25332d03884020a0136a741b416c39"  }
+]
+
+
+# [vars]
+# WORKERS_RS_VERSION = "0.0.9"
+
+# [build]
+# command = "cargo install -q worker-build && worker-build --release" # required
+
+# [build.upload]
+# dir = "build/worker"
+# format = "modules"
+# main = "./shim.mjs"
+
+# [[build.upload.rules]]
+# globs = ["**/*.wasm"]
+# type = "CompiledWasm"
+
+
+# read more about configuring your Worker via wrangler.toml at:
+# https://developers.cloudflare.com/workers/cli-wrangler/configuration
