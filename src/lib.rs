@@ -1,12 +1,14 @@
 extern crate cfg_if;
 extern crate wasm_bindgen;
 
-mod utils;
+mod svg;
 mod tictactoe;
+mod utils;
 
-use tictactoe::{Cell, State};
 use cfg_if::cfg_if;
 use js_sys::{Array, ArrayBuffer, Function, JsString, Object, Reflect, Uint8Array};
+use svg::SVG;
+use tictactoe::{Cell, State};
 use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::{Request, Response, ResponseInit, UrlSearchParams};
 
@@ -89,14 +91,17 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
             cell.state = match cell.state {
                 State::Empty => State::X,
-                _ => State::Empty
+                _ => State::Empty,
             };
 
             let cell_after = &cell.serialize();
 
-            kv.put_text(&k, &cell.serialize(), 24*60*60).await?;
+            kv.put_text(&k, &cell.serialize(), 24 * 60 * 60).await?;
+
+            let mut svg = SVG::new_from_template();
+
             respond(&format!("{} -> {}", &cell_before, &cell_after), 200)
-        },
+        }
 
         "/api/cell.svg" => {
             // let username = query_params.get("u").unwrap_or_default();
