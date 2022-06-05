@@ -7,7 +7,6 @@
 pub struct SVG {
     pub body: String,
 }
-
 pub struct SVGTemplate {
 }
 
@@ -19,7 +18,7 @@ impl SVG {
         //     "o" => State::O,
         //     _ => State::Empty,
         // };
-        SVG { body }
+        SVG { body: body.to_string() }
     }
 
     pub fn new_from_template(template: SVGTemplate) -> SVG {
@@ -27,7 +26,7 @@ impl SVG {
     }
 
     pub fn render(&self) -> String {
-        "svg"
+        return String::from(&self.body);
     }
 
     // pub fn serialize(&self) -> String {

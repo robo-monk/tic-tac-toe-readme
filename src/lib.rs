@@ -7,7 +7,7 @@ mod utils;
 
 use cfg_if::cfg_if;
 use js_sys::{Array, ArrayBuffer, Function, JsString, Object, Reflect, Uint8Array};
-use svg::SVG;
+use svg::{SVG, SVGTemplate};
 use tictactoe::{Cell, State};
 use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::{Request, Response, ResponseInit, UrlSearchParams};
@@ -98,7 +98,7 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
             kv.put_text(&k, &cell.serialize(), 24 * 60 * 60).await?;
 
-            let mut svg = SVG::new_from_template();
+            // let mut svg = SVG::new_from_template(SVGTemplate {});
 
             respond(&format!("{} -> {}", &cell_before, &cell_after), 200)
         }
