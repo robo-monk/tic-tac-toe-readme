@@ -82,6 +82,15 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
     log!("[>] incoming", &url.host(), "/", &pathname, "\n");
 
     
+    fn redirect(url: &str) -> Result<Response, JsValue> {
+        let mut res = ResponseInit::new();
+        let headers = Headers::new().unwrap();
+        headers.append("content-type", "image/svg+xml").expect("invalid headers");
+        headers.append("location", url).expect("invalid headers");
+        res.headers(&headers);
+        res.status(301);
+        Response::new_with_opt_str_and_init(Some(""), &res)
+    }
 
     fn respond(contents: &str, status: u16) -> Result<Response, JsValue> {
         let mut init = ResponseInit::new();
@@ -110,6 +119,8 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
     return match pathname.as_str() {
         "/api/click" => {
+            let redirect_to = query_params.get("r").unwrap_or_default();
+
             let k = get_redis_key(query_params);
             let initial_state = kv.get_text(&k).await?.unwrap_or_default();
             log!("redis key", &k);
@@ -129,7 +140,8 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
             // let mut svg = SVG::new_from_template(SVGTemplate {});
 
-            respond_json(&format!("{} -> {}", &cell_before, &cell_after), 200)
+            // respond_json(&format!("{} -> {}", &cell_before, &cell_after), 200)
+            redirect(&redirect_to)
         }
 
         "/api/cell.svg" => {

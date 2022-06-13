@@ -2,16 +2,18 @@
     import { onMount } from "svelte";
 
     let username = "";
-    let href = "http://localhost:3000/"
+    // let href = "http://localhost:3000/"
+    // let href = "http://localhost:8787/"
+    let href = window.location.href
     let production = false;
-    let baseUrl = ""
+    let baseUrl = "http://localhost:8787"
     let setUsername = () => {}
 
-    $: setUsername(username)
+    // $: setUsername(username)
     $: href = production ? `https://github.com/${username}/` : href
 
     onMount(() => {
-        baseUrl = window.location.origin
+        // baseUrl = window.location.origin
         production = !window.location.origin.includes('localhost:3000')
         console.log('localstaorgae', localStorage)
         username = username || localStorage.getItem('username') 
@@ -43,17 +45,18 @@
     }
 
     const template = ({
-        username
+        u, r
     }) => `
-        ${repeat((i) => cellTemplate({ username, i, href }), 3, 0)}
+        ${repeat((i) => cellTemplate({ u, i, r }), 3, 0)}
         <br>
-        ${repeat((i) => cellTemplate({ username, i, href}), 3, 3)}
+        ${repeat((i) => cellTemplate({ u, i, r}), 3, 3)}
         <br>
-        ${repeat((i) => cellTemplate({ username, i, href }), 3, 6)}
+        ${repeat((i) => cellTemplate({ u, i, r }), 3, 6)}
     `.trim()
     $: {
         code = template({
-            username
+            u: username,
+            r: href
         });
     }
 </script>
