@@ -38,6 +38,7 @@ features = [
     'ResponseInit',
     'Url',
     'UrlSearchParams',
+    'Headers'
 ]
 
 [dev-dependencies]

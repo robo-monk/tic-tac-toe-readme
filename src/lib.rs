@@ -9,8 +9,9 @@ use cfg_if::cfg_if;
 use js_sys::{Array, ArrayBuffer, Function, JsString, Object, Reflect, Uint8Array};
 use svg::{SVG, SVGTemplate};
 use tictactoe::{Cell, State};
-use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{Request, Response, ResponseInit, UrlSearchParams};
+use wasm_bindgen::{prelude::*, JsCast, JsValue,};
+
+use web_sys::{Request, Response, ResponseInit, UrlSearchParams, Headers};
 
 cfg_if! {
     // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -26,6 +27,16 @@ trait ConsoleAdapter {
     fn to_console_obj(self) -> JsString;
 }
 
+impl ConsoleAdapter for JsString {
+    fn to_console_obj(self) -> JsString {
+        self
+    }
+}
+impl ConsoleAdapter for &JsString {
+    fn to_console_obj(self) -> JsString {
+        self.to_owned() 
+    }
+}
 impl ConsoleAdapter for &str {
     fn to_console_obj(self) -> JsString {
         JsString::from(self)
@@ -44,6 +55,7 @@ impl ConsoleAdapter for Vec<&str> {
         self.join(" ").to_console_obj()
     }
 }
+
 
 #[wasm_bindgen]
 pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Response, JsValue> {
@@ -69,10 +81,25 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
     log!("[>] incoming", &url.host(), "/", &pathname, "\n");
 
-    fn respond(json: &str, status: u16) -> Result<Response, JsValue> {
+    
+
+    fn respond(contents: &str, status: u16) -> Result<Response, JsValue> {
         let mut init = ResponseInit::new();
         init.status(status);
-        Response::new_with_opt_str_and_init(Some(&format!("\"{}\"\n", json)), &init)
+        Response::new_with_opt_str_and_init(Some(contents), &init)
+    }
+
+    fn respond_svg(svg: &str) -> Result<Response, JsValue> {
+        let mut res = ResponseInit::new();
+        let headers = Headers::new().unwrap();
+        headers.append("content-type", "image/svg+xml").expect("invalid headers");
+        res.headers(&headers);
+        res.status(200);
+        Response::new_with_opt_str_and_init(Some(svg), &res)
+    }
+
+    fn respond_json(json: &str, status: u16) -> Result<Response, JsValue> {
+        respond(&format!("\"{}\"\n", json), status)
     }
 
     fn get_redis_key(params: UrlSearchParams) -> String {
@@ -89,8 +116,10 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
             let mut cell = Cell::new(&initial_state);
             let cell_before = cell.serialize();
 
+
             cell.state = match cell.state {
                 State::Empty => State::X,
+                State::X => State::O,
                 _ => State::Empty,
             };
 
@@ -100,7 +129,7 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
 
             // let mut svg = SVG::new_from_template(SVGTemplate {});
 
-            respond(&format!("{} -> {}", &cell_before, &cell_after), 200)
+            respond_json(&format!("{} -> {}", &cell_before, &cell_after), 200)
         }
 
         "/api/cell.svg" => {
@@ -110,10 +139,31 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
             log!("redis key", &k);
 
             let state = kv.get_text(&k).await?.unwrap_or_default();
-            respond(&state, 200)
+            let cell = Cell::new(&state);
+
+            let svg_template = match cell.state {
+                State::X => SVGTemplate::X,
+                State::O => SVGTemplate::O,
+                _ => SVGTemplate::Empty
+                
+
+            };
+            let svg = SVG::new_from_template(svg_template); 
+            respond_svg(&svg.render())
         }
 
-        _ => respond("These are not the droids you're looking for", 404),
+        _ => {
+
+            // let svg = SVG::new_from_template(SVGTemplate::o);
+
+            // JsValue
+            // respond(&svg.render(), 200)
+            // respond_svg(&svg.render())
+            // respond(&format!("{}", &contents), 200)
+            // respond(contents);
+            respond("These are not the droids you're looking for", 404)
+        },
+        // _ => respond("These are not the droids you're looking for", 404),
     };
 
     match req.method().as_str() {
@@ -213,105 +263,3 @@ impl WorkersKv {
         }
     }
 }
-
-// use serde_json::json;
-// use worker::*;
-
-// // mod utils;
-
-// extern crate cfg_if;
-// extern crate wasm_bindgen;
-
-// mod utils;
-
-// use cfg_if::cfg_if;
-// // use js_sys::{ArrayBuffer, Object, Reflect, Uint8Array};
-// use js_sys::{ArrayBuffer, Object, Reflect, Uint8Array};
-// use wasm_bindgen::{prelude::*, JsCast};
-// use web_sys::{Request, Response, ResponseInit};
-
-// cfg_if! {
-//     // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-//     // allocator.
-//     if #[cfg(feature = "wee_alloc")] {
-//         extern crate wee_alloc;
-//         #[global_allocator]
-//         static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-//     }
-// }
-
-// #[wasm_bindgen]
-// extern "C" {
-//     pub type WorkersKvJs;
-
-//     #[wasm_bindgen(structural, method, catch)]
-//     pub async fn put(
-//         this: &WorkersKvJs,
-//         k: JsValue,
-//         v: JsValue,
-//         options: JsValue,
-//     ) -> Result<JsValue, JsValue>;
-
-//     #[wasm_bindgen(structural, method, catch)]
-//     pub async fn get(
-//         this: &WorkersKvJs,
-//         key: JsValue,
-//         options: JsValue,
-//     ) -> Result<JsValue, JsValue>;
-// }
-
-// struct WorkersKv {
-//     kv: WorkersKvJs,
-// }
-
-// // async fn put_text(&self, key: &str, value: &str, expiration_ttl: u64) -> Result<(), JsValue> {
-
-// impl WorkersKv {
-//     async fn put_text(&self, key: &str, value: &str, ttl: u64) -> Result<(), JsValue> {
-//         let options = Object::new();
-//         Reflect::set(&options, &"expirationTtl".into(), &(ttl as f64).into())?;
-//         // let ary = Uint8Array::new_with_length(value.len() as u32);
-//         // ary.copy_from(value);
-
-//         self.kv
-//             // .put(JsValue::from_str(key), ary.buffer().into(), options.into())
-//             .put(JsValue::from_str(key), value.into(), options.into())
-//             .await?;
-
-//         Ok(())
-//     }
-
-//     async fn get_text(&self, key: &str) -> Result<Option<String>, JsValue> {
-//         let options = Object::new();
-//         Reflect::set(&options, &"type".into(), &"text".into())?;
-
-//         Ok(self
-//             .kv
-//             .get(JsValue::from_str(key), options.into())
-//             .await?
-//             .as_string())
-//     }
-// }
-
-// #[wasm_bindgen]
-// pub async fn handle(kv: WorkersKvJs, req: JsValue) -> Result<Response, JsValue> {
-//     let req: Request = req.dyn_into()?;
-//     let url = web_sys::Url::new(&req.url())?;
-//     let pathname = url.pathname();
-//     let query = url.search_params();
-//     let kv = WorkersKv { kv };
-
-//     log_request(&req);
-//     utils::set_panic_hook();
-
-//     let value = kv.get_text(&pathname).await?.unwrap_or_default();
-//     let mut res = ResponseInit::new();
-//     res.status(200);
-//     Response::new_with_opt_str_and_init(Some(&format!("\"{}\"\n", value)), &init)
-// }
-
-// async fn get_icon(&req: Request) {
-
-//               let value = kv.get_text(&pathname).await?.unwrap_or_default();
-
-// }
