@@ -102,6 +102,7 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
         let mut res = ResponseInit::new();
         let headers = Headers::new().unwrap();
         headers.append("content-type", "image/svg+xml").expect("invalid headers");
+        headers.append("cache-control", "max-age=1, s-maxage=1").expect("invalid headers");
         res.headers(&headers);
         res.status(200);
         Response::new_with_opt_str_and_init(Some(svg), &res)

@@ -7,14 +7,16 @@
     let href = window.location.href
     let production = false;
     let baseUrl = "http://localhost:8787"
-    let setUsername = () => {}
+    let setUsername = (u) => {}
 
-    // $: setUsername(username)
+    $: setUsername(username)
     $: href = production ? `https://github.com/${username}/` : href
-
     onMount(() => {
         // baseUrl = window.location.origin
         production = !window.location.origin.includes('localhost:3000')
+        production = true
+        baseUrl = production ? "https://tic-tac-toe-readme.rrobomonk.workers.dev" : baseUrl;
+
         console.log('localstaorgae', localStorage)
         username = username || localStorage.getItem('username') 
         setUsername = (username) => localStorage.setItem('username', username)
@@ -32,7 +34,7 @@
 
     }
     const imgTemplate = (params) => {
-        return `<img src="${baseUrl}/api/cell.svg?${new URLSearchParams(params).toString()}" style='width: 80px;'>`
+        return `<img src="${baseUrl}/api/cell.svg?${new URLSearchParams(params).toString()}" style='width: 80px; height: 80px; border: 1px solid black;'>`
     };
 
     const repeat = (cb, times, offset = 0, join=" ") => {
