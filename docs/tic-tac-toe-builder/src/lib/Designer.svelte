@@ -1,5 +1,7 @@
 <script>
     import { onMount } from "svelte";
+    import sha256 from 'crypto-js/sha256';
+
 
     let username = "";
     // let href = "http://localhost:3000/"
@@ -14,7 +16,7 @@
     onMount(() => {
         // baseUrl = window.location.origin
         production = !window.location.origin.includes('localhost:3000')
-        production = true
+        // production = true
         baseUrl = production ? "https://tic-tac-toe-readme.rrobomonk.workers.dev" : baseUrl;
 
         console.log('localstaorgae', localStorage)
@@ -56,8 +58,9 @@
         ${repeat((i) => cellTemplate({ u, i, r }), 3, 6)}
     `.trim()
     $: {
+        const userHash = sha256(username);
         code = template({
-            u: username,
+            u: userHash,
             r: href
         });
     }

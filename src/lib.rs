@@ -1,5 +1,6 @@
 extern crate cfg_if;
 extern crate wasm_bindgen;
+extern crate base64;
 
 mod svg;
 mod tictactoe;
@@ -10,6 +11,7 @@ use js_sys::{Array, ArrayBuffer, Function, JsString, Object, Reflect, Uint8Array
 use svg::{SVG, SVGTemplate};
 use tictactoe::{Cell, State};
 use wasm_bindgen::{prelude::*, JsCast, JsValue,};
+use base64::{encode, decode};
 
 use web_sys::{Request, Response, ResponseInit, UrlSearchParams, Headers};
 
@@ -82,16 +84,26 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
     log!("[>] incoming", &url.host(), "/", &pathname, "\n");
 
     
+    // fn redirect(url: &str) -> Result<Response, JsValue> {
+    //     let mut res = ResponseInit::new();
+    //     let headers = Headers::new().unwrap();
+    //     headers.append("content-type", "image/svg+xml").expect("invalid headers");
+    //     headers.append("location", url).expect("invalid headers");
+    //     res.headers(&headers);
+    //     res.status(301);
+    //     Response::new_with_opt_str_and_init(Some(""), &res)
+    // }
+
     fn redirect(url: &str) -> Result<Response, JsValue> {
         let mut res = ResponseInit::new();
         let headers = Headers::new().unwrap();
-        headers.append("content-type", "image/svg+xml").expect("invalid headers");
-        headers.append("location", url).expect("invalid headers");
+        headers.append("content-type", "text/html").expect("invalid headers");
+        headers.append("cache-control", "no-cache, no-store, max-age=0, must-revalidate").expect("invalid headers");
         res.headers(&headers);
-        res.status(301);
-        Response::new_with_opt_str_and_init(Some(""), &res)
+        res.status(200);
+        let encoded_url = base64::encode(url);
+        Response::new_with_opt_str_and_init(Some(&format!("<html><body><script> let url = atob(\"{}\"); setTimeout(() => window.location.href = url, 1000); </script></body></html>", encoded_url)), &res)
     }
-
     fn respond(contents: &str, status: u16) -> Result<Response, JsValue> {
         let mut init = ResponseInit::new();
         init.status(status);
@@ -102,7 +114,7 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
         let mut res = ResponseInit::new();
         let headers = Headers::new().unwrap();
         headers.append("content-type", "image/svg+xml").expect("invalid headers");
-        headers.append("cache-control", "max-age=1, s-maxage=1").expect("invalid headers");
+        headers.append("cache-control", "no-cache, no-store, max-age=0, must-revalidate").expect("invalid headers");
         res.headers(&headers);
         res.status(200);
         Response::new_with_opt_str_and_init(Some(svg), &res)
