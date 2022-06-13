@@ -6,13 +6,13 @@
     let username = "";
     // let href = "http://localhost:3000/"
     // let href = "http://localhost:8787/"
-    let href = window.location.href
+    let href = window.location.origin + window.location.pathname;
     let production = false;
     let baseUrl = "http://localhost:8787"
     let setUsername = (u) => {}
 
     $: setUsername(username)
-    $: href = production ? `https://github.com/${username}/` : href
+    $: href = production ? `https://github.com/${username}` : href
     onMount(() => {
         // baseUrl = window.location.origin
         production = !window.location.origin.includes('localhost:3000')

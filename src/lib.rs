@@ -102,7 +102,14 @@ pub async fn handle(kv: WorkersKvJs, req: JsValue, log: JsValue) -> Result<Respo
         res.headers(&headers);
         res.status(200);
         let encoded_url = base64::encode(url);
-        Response::new_with_opt_str_and_init(Some(&format!("<html><body><script> let url = atob(\"{}\"); setTimeout(() => window.location.href = url, 1000); </script></body></html>", encoded_url)), &res)
+        Response::new_with_opt_str_and_init(Some(&format!("<html><body><script> \
+            let nanoid = (t=21)=>crypto.getRandomValues(new Uint8Array(t)).reduce(((t,e)=>t+=(e&=63)<36?e.toString(36):e<62?(e-26).toString(36).toUpperCase():e>62?'-':'_'),'');
+            let hash = nanoid();
+            console.log('hsh', hash)
+            let url = new URL(atob(\"{}\"));
+            url.searchParams.set('hash', hash);
+            setTimeout(() => window.location.href = url.href, 1000);
+         </script></body></html>", encoded_url)), &res)
     }
     fn respond(contents: &str, status: u16) -> Result<Response, JsValue> {
         let mut init = ResponseInit::new();
